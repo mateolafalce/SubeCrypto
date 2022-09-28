@@ -21,6 +21,23 @@ pub mod sube_crypto {
         sube.bump_original = bump;
         Ok(())
     }
+    pub fn take_a_trip(
+        ctx: Context<Trip>
+    ) -> Result<()> {
+        //TODO
+        let _lamports: u64 = 1000000000;
+        let from = &mut ctx.accounts.from;
+        let to = &mut ctx.accounts.to;
+        let transfer = system_instruction::transfer(
+            &from_pubkey, &to_pubkey, _lamports,
+        );
+        anchor_lang::solana_program::program::invoke(
+            &transfer,
+            &[from.to_account_info(), to.to_account_info().clone()],
+        ).expect("Error");
+        msg!("Transfered Lamports");
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -29,6 +46,18 @@ pub struct InitializeAdminAccount<'info> {
     pub sube: Account<'info, SubeAdminAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+#[derive(Accounts)]
+pub struct Trip<'info> {
+    #[account(mut, seeds = [sube.authority.key().as_ref()], bump = sube.bump_original)]
+    pub sube: Account<'info, SubeAdminAccount>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut, signer)]
+    pub from: AccountInfo<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub to: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 #[account]
