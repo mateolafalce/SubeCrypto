@@ -19,7 +19,7 @@ The program logic allows for the creation of decentralized bus lines (although i
 
 Like any blockchain technology, it is not yet in the bidding or practical application process due to regional legislation, but this project aims to establish the foundations of what could be a decentralized and simplified transport system in favor of the consumer and not in favor of the monopolistic bus lines regulated by law.
 
-<h3 align="center">Initialize a bus line</h3>
+<h3 align="center">Initialize a bus line🚌</h3>
 
 ```rust
 // This function initializes a bus line with different prices for different distances.
@@ -86,7 +86,7 @@ After the account is initialized, the signatory is set as the account authority 
 
 Finally, the function returns an empty result value Ok(()). The Accounts structure is used to specify the relevant accounts that are used in the function and passed as arguments. In this case, the upload account and the signatory signer, as well as the system program, are specified.
 
-<h3 align="center">Take a trip</h3>
+<h3 align="center">Take a trip🎫</h3>
 
 ```rust
 pub fn take_a_trip(

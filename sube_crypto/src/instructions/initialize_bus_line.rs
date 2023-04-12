@@ -1,58 +1,60 @@
 use anchor_lang::{
     prelude::*,
-    solana_program::pubkey::Pubkey,
+    solana_program::{
+        account_info::AccountInfo,
+        pubkey::Pubkey,
+        system_instruction,
+        program
+    },
 };
-use crate::state::accounts::*;
+use crate::state::accounts::*; // Import state module with account structs
+use crate::errors::ErrorCode; // Import module with error codes
 
-// This function initializes a bus line with different prices for different distances.
-pub fn initialize_bus_line(
-    ctx: Context<InitializeBusLine>, // A context struct that holds accounts and other contextual information.
-    to3km: u64, // Price for a distance of up to 3 km.
-    to6km: u64, // Price for a distance between 3 km and 6 km.
-    to12km: u64, // Price for a distance between 6 km and 12 km.
-    to27km: u64, // Price for a distance between 12 km and 27 km.
-    more27km: u64, // Price for a distance greater than 27 km.
+// Define the take_a_trip function which takes a Context object and a km value and returns a Result object
+pub fn take_a_trip(
+    ctx: Context<TakeATrip>,
+    km: u8
 ) -> Result<()> {
-    // Generate a program-derived address (PDA) from the signer's key and program ID.
-    let (_services_pda, bump): (Pubkey, u8) =
-        Pubkey::find_program_address(&[
-            ctx.accounts.signer.key().as_ref()
-            ],
-            ctx.program_id
+    // Check that the km value is valid (less than or equal to 4)
+    require!(km <= 4, ErrorCode::InvalidaKilometer);
+    // Check that the sube authority and the "to" account have the same public key
+    require!(ctx.accounts.sube.key() == ctx.accounts.to.key(), ErrorCode::PubkeyError);
+    // Get the price for the specified kilometer from the sube account
+    let amount: u64 = ctx.accounts.sube.prices[km as usize];
+    // Create a transfer instruction to send the payment from the "from" account to the "to" account
+    let transfer =
+        system_instruction::transfer(
+            &ctx.accounts.from.key(),
+            &ctx.accounts.to.key(),
+            amount
         );
-    // Get a mutable reference to the SubeAdminAccount associated with the Sube PDA.
-    let sube: &mut Account<SubeAdminAccount> = &mut ctx.accounts.sube;
-    // Set the authority of the SubeAdminAccount to the signer's key.
-    sube.authority = ctx.accounts.signer.key();
-    // Set the original bump value of the SubeAdminAccount to the generated bump.
-    sube.bump_original = bump;
-    // Set the prices of the SubeAdminAccount to the provided prices.
-    sube.prices = [
-        to3km,
-        to6km,
-        to12km,
-        to27km,
-        more27km
-    ].to_vec();
-    // Return a successful result.
+    // Invoke the transfer instruction using the Solana system program
+    program::invoke(
+            &transfer,
+            &[
+                ctx.accounts.from.to_account_info(),
+                ctx.accounts.to.to_account_info().clone(),
+            ],
+        )
+        .expect("Error"); // Handle any errors that may occur during the transfer
+    // Print a message to indicate that the bus ticket has been paid
+    msg!("Paid bus ticket");
+    // Return a success result
     Ok(())
 }
 
-// This struct defines the accounts required for the initialize_bus_line function.
+// Define a struct to hold the accounts required by the take_a_trip function
 #[derive(Accounts)]
-pub struct InitializeBusLine<'info> {
-    // The SubeAdminAccount to be initialized.
+pub struct TakeATrip<'info> {
     #[account(
-        init,
-        seeds = [signer.key().as_ref()], // Seeds used to generate the PDA.
-        bump, // Bump value used to generate the PDA.
-        payer = signer, // The account that pays for the creation of the SubeAdminAccount.
-        space = 8 + SubeAdminAccount::SIZE // Required space for the SubeAdminAccount.
+        mut,
+        seeds = [sube.authority.key().as_ref()], // Use the sube account's authority key as the seed
+        bump = sube.bump_original // Use the sube account's original bump value
     )]
-    pub sube: Account<'info, SubeAdminAccount>,
-    // The signer account that authorizes the transaction.
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    // The system program account.
-    pub system_program: Program<'info, System>,
+    pub sube: Account<'info, SubeAdminAccount>, // Account representing the sube administrator
+    #[account(mut, signer)] // Specify that the "from" account must be mutable and signed
+    pub from: AccountInfo<'info>, // Account representing the account that pays for the bus ticket
+    #[account(mut)] // Specify that the "to" account must be mutable
+    pub to: AccountInfo<'info>, // Account representing the account that receives payment for the bus ticket
+    pub system_program: Program<'info, System>, // The Solana system program account
 }
