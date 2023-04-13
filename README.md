@@ -3,9 +3,9 @@
 ![sube-crypto](sube-crypto.png)
 
 
-<h1>SUBE CRYPTO</h1>
+<h1>💳SUBE CRYPTO💳</h1>
 
-A public transport system payment
+A public transport system payment🚍
 
 </div>
 
