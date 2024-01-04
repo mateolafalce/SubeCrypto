@@ -1,9 +1,6 @@
 use anchor_client::{
     anchor_lang::system_program,
-    solana_sdk::{
-        signature::Signature,
-        pubkey::Pubkey,
-    },
+    solana_sdk::{pubkey::Pubkey, signature::Signature},
     Program,
 };
 use anyhow::Result;
@@ -35,16 +32,12 @@ pub fn initialize_bus_line(
         })
         .send()?;
     let account: SubeAdminAccount = program.account(sube)?;
-    println!("------------------------------------------------------------");
+
     println!("Tx: {}", tx);
-    println!("------------------------------------------------------------");
     println!("PDA: {}", sube);
-    println!("------------------------------------------------------------");
     println!("Authority: {:?}", account.authority);
-    println!("------------------------------------------------------------");
     println!("Bump: {:?}", account.bump_original);
-    println!("------------------------------------------------------------");
-    println!("Prices: {:?}", account.prices);
-    println!("------------------------------------------------------------");
+    println!("Prices: {:?}", account.prices);    
+    
     Ok(())
 }

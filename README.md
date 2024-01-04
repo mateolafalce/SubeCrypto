@@ -3,9 +3,9 @@
 ![sube-crypto](sube-crypto.png)
 
 
-<h1>💳SUBE CRYPTO💳</h1>
+# SUBE CRYPTO
 
-A public transport system payment🚍
+A public transport system payment 🚍
 
 </div>
 
@@ -19,122 +19,86 @@ The program logic allows for the creation of decentralized bus lines (although i
 
 Like any blockchain technology, it is not yet in the bidding or practical application process due to regional legislation, but this project aims to establish the foundations of what could be a decentralized and simplified transport system in favor of the consumer and not in favor of the monopolistic bus lines regulated by law.
 
-<h3 align="center">Initialize a bus line🚌</h3>
+## Initialize a bus line
 
 ```rust
-// This function initializes a bus line with different prices for different distances.
 pub fn initialize_bus_line(
-    ctx: Context<InitializeBusLine>, // A context struct that holds accounts and other contextual information.
-    to3km: u64, // Price for a distance of up to 3 km.
-    to6km: u64, // Price for a distance between 3 km and 6 km.
-    to12km: u64, // Price for a distance between 6 km and 12 km.
-    to27km: u64, // Price for a distance between 12 km and 27 km.
-    more27km: u64, // Price for a distance greater than 27 km.
+    ctx: Context<InitializeBusLine>,
+    to3km: u64,
+    to6km: u64,
+    to12km: u64,
+    to27km: u64,
+    more27km: u64,
 ) -> Result<()> {
-    // Generate a program-derived address (PDA) from the signer's key and program ID.
+    let signer: Pubkey = ctx.accounts.signer.key();
+    let program_id: &Pubkey = ctx.program_id;
     let (_services_pda, bump): (Pubkey, u8) =
-        Pubkey::find_program_address(&[
-            ctx.accounts.signer.key().as_ref()
-            ],
-            ctx.program_id
-        );
-    // Get a mutable reference to the SubeAdminAccount associated with the Sube PDA.
+        Pubkey::find_program_address(&[signer.as_ref()], program_id);
     let sube: &mut Account<SubeAdminAccount> = &mut ctx.accounts.sube;
-    // Set the authority of the SubeAdminAccount to the signer's key.
-    sube.authority = ctx.accounts.signer.key();
-    // Set the original bump value of the SubeAdminAccount to the generated bump.
+    sube.authority = signer;
     sube.bump_original = bump;
-    // Set the prices of the SubeAdminAccount to the provided prices.
-    sube.prices = [
-        to3km,
-        to6km,
-        to12km,
-        to27km,
-        more27km
-    ].to_vec();
-    // Return a successful result.
+    sube.prices = [to3km, to6km, to12km, to27km, more27km].to_vec();
     Ok(())
 }
 
-// This struct defines the accounts required for the initialize_bus_line function.
 #[derive(Accounts)]
 pub struct InitializeBusLine<'info> {
-    // The SubeAdminAccount to be initialized.
-    #[account(
-        init,
-        seeds = [signer.key().as_ref()], // Seeds used to generate the PDA.
-        bump, // Bump value used to generate the PDA.
-        payer = signer, // The account that pays for the creation of the SubeAdminAccount.
-        space = 8 + SubeAdminAccount::SIZE // Required space for the SubeAdminAccount.
-    )]
+    #[account(init, seeds = [signer.key().as_ref()], bump, payer = signer, space = 8 + SubeAdminAccount::SIZE)]
     pub sube: Account<'info, SubeAdminAccount>,
-    // The signer account that authorizes the transaction.
     #[account(mut)]
     pub signer: Signer<'info>,
-    // The system program account.
     pub system_program: Program<'info, System>,
 }
 ```
 
 This function called initialize_bus_line, is used to initialize a bus line and set the prices to be charged for different travel legs.
 
-It takes as arguments a Context<InitializeBusLine> structure that contains relevant contextual information, as well as the prices to set for different travel legs. The prices are passed as parameters to the function and are assigned to an array of prices in the SubeAdminAccount that is created or initialized in the function.
+It takes as arguments a Context InitializeBusLine structure that contains relevant contextual information, as well as the prices to set for different travel legs. The prices are passed as parameters to the function and are assigned to an array of prices in the SubeAdminAccount that is created or initialized in the function.
 
 The first step of the function is to use the provided signer's public key to calculate a derived public key and a "bump" (an offset value used to protect against key collision attacks). The derived public key is used to seed a SubeAdminAccount, which is set as a seed account. The space argument is used to set the storage space required for the account.
 
 After the account is initialized, the signatory is set as the account authority and the original "bump" is set. The prices are assigned to a price array in the SubeAdminAccount that was just initialized.
 
-Finally, the function returns an empty result value Ok(()). The Accounts structure is used to specify the relevant accounts that are used in the function and passed as arguments. In this case, the upload account and the signatory signer, as well as the system program, are specified.
 
-<h3 align="center">Take a trip🎫</h3>
+## Take a trip
 
 ```rust
-pub fn take_a_trip(
-    ctx: Context<TakeATrip>,
-    km: u8
-) -> Result<()> {
-    // Check that the km value is valid (less than or equal to 4)
-    require!(km <= 4, ErrorCode::InvalidaKilometer);
-    // Check that the sube authority and the "to" account have the same public key
-    require!(ctx.accounts.sube.key() == ctx.accounts.to.key(), ErrorCode::PubkeyError);
-    // Get the price for the specified kilometer from the sube account
+pub fn take_a_trip(ctx: Context<TakeATrip>, km: u8) -> Result<()> {
     let amount: u64 = ctx.accounts.sube.prices[km as usize];
-    // Create a transfer instruction to send the payment from the "from" account to the "to" account
-    let transfer =
-        system_instruction::transfer(
-            &ctx.accounts.from.key(),
-            &ctx.accounts.to.key(),
-            amount
-        );
-    // Invoke the transfer instruction using the Solana system program
-    program::invoke(
-            &transfer,
-            &[
-                ctx.accounts.from.to_account_info(),
-                ctx.accounts.to.to_account_info().clone(),
-            ],
-        )
-        .expect("Error"); // Handle any errors that may occur during the transfer
-    // Print a message to indicate that the bus ticket has been paid
-    msg!("Paid bus ticket");
-    // Return a success result
+    let sube: Pubkey = ctx.accounts.sube.key();
+    let to: Pubkey = ctx.accounts.to.key();
+    let from: Pubkey = ctx.accounts.from.key();
+    // validations
+    require_gte!(4, km);
+    require_keys_eq!(sube, to);
+    let transfer = transfer(&from, &to, amount);
+    invoke(
+        &transfer,
+        &[
+            ctx.accounts.from.to_account_info(),
+            ctx.accounts.to.to_account_info().clone(),
+        ],
+    )
+    .expect("Error");
+    msg!("Paid bus ticket!");
     Ok(())
 }
 
-// Define a struct to hold the accounts required by the take_a_trip function
 #[derive(Accounts)]
 pub struct TakeATrip<'info> {
     #[account(
         mut,
-        seeds = [sube.authority.key().as_ref()], // Use the sube account's authority key as the seed
-        bump = sube.bump_original // Use the sube account's original bump value
+        seeds = [sube.authority.key().as_ref()],
+        bump = sube.bump_original
     )]
-    pub sube: Account<'info, SubeAdminAccount>, // Account representing the sube administrator
-    #[account(mut, signer)] // Specify that the "from" account must be mutable and signed
-    pub from: AccountInfo<'info>, // Account representing the account that pays for the bus ticket
-    #[account(mut)] // Specify that the "to" account must be mutable
-    pub to: AccountInfo<'info>, // Account representing the account that receives payment for the bus ticket
-    pub system_program: Program<'info, System>, // The Solana system program account
+    pub sube: Account<'info, SubeAdminAccount>,
+    /// CHECK: This is not dangerous
+    #[account(mut, signer)]
+    pub from: AccountInfo<'info>,
+    /// CHECK: This is not dangerous
+    #[account(mut)]
+    pub to: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
 }
 ```
 
@@ -145,5 +109,3 @@ The second argument is the number of kilometers the user wishes to travel on the
 It is verified that the number of kilometers is valid and that the sender of the transaction and the receiver of the transaction are the same accounts that are defined in the TakeATrip structure. The sube account is accessed and the amount of money that must be paid for the ticket is obtained, according to the distance that the user wishes to travel.
 
 An instruction is created to transfer the cryptocurrency or token from the sending account to the receiving account, with the previously calculated amount of money. The function program::invoke is called to execute the transfer statement.
-
-If the transfer was successful, an Ok(()) value is returned, otherwise an error is raised.

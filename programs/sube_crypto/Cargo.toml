@@ -1,6 +1,6 @@
 [package]
-name = "sube-crypto"
-version = "0.1.0"
+name = "sube_crypto"
+version = "1.0.0"
 description = "."
 edition = "2021"
 
@@ -16,4 +16,5 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.26.0"
+anchor-lang = "0.29.0"
+ahash = "=0.8.6"

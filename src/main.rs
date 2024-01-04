@@ -10,10 +10,11 @@ pub mod functions;
 fn main() -> Result<()> {
     Ok(())
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]//cargo test initialize_bus_line -- --show-output
+    #[test] //cargo test initialize_bus_line -- --show-output
     fn initialize_bus_line() {
         use anchor_client::{
             solana_sdk::{pubkey::Pubkey, signature::read_keypair_file},
@@ -36,7 +37,7 @@ mod tests {
         )
         .unwrap();
     }
-    #[test]//cargo test take_a_trip -- --show-output
+    #[test] //cargo test take_a_trip -- --show-output
     fn take_a_trip() {
         let program = Client::new(
             Cluster::Devnet,
