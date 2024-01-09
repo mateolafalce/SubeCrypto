@@ -17,15 +17,15 @@ pub fn initialize_bus_line(
     let (_services_pda, bump): (Pubkey, u8) =
         Pubkey::find_program_address(&[signer.as_ref()], program_id);
     let sube: &mut Account<SubeAdminAccount> = &mut ctx.accounts.sube;
-    sube.authority = signer;
-    sube.bump_original = bump;
-    sube.prices = [to3km, to6km, to12km, to27km, more27km].to_vec();
+    sube.set_authority(signer);
+    sube.set_bump_original(bump);
+    sube.set_prices(to3km, to6km, to12km, to27km, more27km);
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct InitializeBusLine<'info> {
-    #[account(init, seeds = [signer.key().as_ref()], bump, payer = signer, space = 8 + SubeAdminAccount::SIZE)]
+    #[account(init, seeds = [signer.key().as_ref()], bump, payer = signer, space = SubeAdminAccount::SIZE)]
     pub sube: Account<'info, SubeAdminAccount>,
     #[account(mut)]
     pub signer: Signer<'info>,

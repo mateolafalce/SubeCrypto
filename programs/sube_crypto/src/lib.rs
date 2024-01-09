@@ -9,13 +9,13 @@ use instructions::{
     TakeATrip,
 };
 
-declare_id!("6aARpcVGa9htfRgEgvNe55nFNAkyPykoUXFctpjJ2A1z");
+declare_id!("CPxMkDjjywp6FQdKenw92zVJEDc6TVFEXhG7yLc7Xw4N");
 
 #[program]
 pub mod sube_crypto {
     use super::*;
 
-    pub fn initialize_bus_line_(
+    pub fn initialize_bus(
         ctx: Context<InitializeBusLine>,
         to3km: u64,
         to6km: u64,
@@ -26,7 +26,7 @@ pub mod sube_crypto {
         initialize_bus_line(ctx, to3km, to6km, to12km, to27km, more27km)
     }
 
-    pub fn take_a_trip_(ctx: Context<TakeATrip>, km: u8) -> Result<()> {
+    pub fn take_trip(ctx: Context<TakeATrip>, km: u8) -> Result<()> {
         take_a_trip(ctx, km)
     }
 }
